@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Image, InputNumber, message, Divider, Tag, Rate, Select, Empty, Skeleton } from 'antd';
+import { Image, InputNumber, message, Divider, Tag, Rate, Select, Empty, Skeleton, Tooltip } from 'antd';
+import { InfoCircleOutlined } from '@ant-design/icons';
 import Layout, { Content } from "../../ComponentsUI/Layout.jsx";
 import Row from "../../ComponentsUI/Row.jsx";
 import Col from "../../ComponentsUI/Col.jsx";
@@ -27,16 +28,20 @@ const ProductDetail = () => {
     const [convertedPrice, setConvertedPrice] = useState(null);
     const [currencyError, setCurrencyError] = useState(null);
     const [isLoadingRates, setIsLoadingRates] = useState(false);
-    const [lastUpdate, setLastUpdate] = useState(null);
+    const [lastUpdate, setLastUpdate] = useState(() => {
+        const savedUpdate = localStorage.getItem('lastRatesUpdate');
+        return savedUpdate ? new Date(savedUpdate) : null;
+    });
     const [isUserInteracting, setIsUserInteracting] = useState(false);
+    const [isTabVisible, setIsTabVisible] = useState(true);
     const pollingRef = useRef(null);
     const abortControllerRef = useRef(null);
     const navigate = useNavigate();
 
-    // Función para obtener tasas (ahora con manejo de interacción)
+    // Función optimizada para obtener tasas
     const fetchRates = useCallback(async () => {
-        if (isUserInteracting) {
-            console.log('Pausando actualizaciones durante interacción del usuario');
+        if (isUserInteracting || !isTabVisible) {
+            console.log('Pausando actualizaciones durante interacción o pestaña inactiva');
             return;
         }
 
@@ -55,20 +60,31 @@ const ProductDetail = () => {
                 {
                     signal: abortController.signal,
                     headers: {
-                        'Cache-Control': 'no-cache'
+                        'Cache-Control': 'no-cache',
+                        'Accept': 'application/json'
                     }
                 }
             );
 
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            if (!response.ok) {
+                throw new Error(`Error HTTP! estado: ${response.status}`);
+            }
 
             const data = await response.json();
             
             if (data.response?.rates) {
-                setExchangeRates(data.response.rates);
-                localStorage.setItem('lastExchangeRates', JSON.stringify(data.response.rates));
-                setLastUpdate(new Date());
+                const newRates = data.response.rates;
+                const updateTime = new Date();
+                
+                setExchangeRates(newRates);
+                setLastUpdate(updateTime);
                 setCurrencyError(null);
+                
+                // Almacenar en localStorage
+                localStorage.setItem('lastExchangeRates', JSON.stringify(newRates));
+                localStorage.setItem('lastRatesUpdate', updateTime.toISOString());
+                
+                console.log('Tasas actualizadas:', updateTime.toLocaleTimeString());
             } else {
                 throw new Error(data.meta?.info || 'Formato de respuesta inválido');
             }
@@ -77,6 +93,7 @@ const ProductDetail = () => {
                 console.error('Error obteniendo tasas:', error);
                 setCurrencyError(error.message);
                 
+                // Usar tasas guardadas si hay error
                 const savedRates = localStorage.getItem('lastExchangeRates');
                 if (savedRates) {
                     setExchangeRates(JSON.parse(savedRates));
@@ -87,15 +104,18 @@ const ProductDetail = () => {
             setIsLoadingRates(false);
             
             // Ajustar el intervalo basado en la visibilidad de la pestaña
-            const interval = document.visibilityState === 'visible' ? 30000 : 120000;
+            const interval = isTabVisible ? 30000 : 120000; // 30s visible, 120s oculto
             pollingRef.current = setTimeout(fetchRates, interval);
         }
-    }, [isUserInteracting]);
+    }, [isUserInteracting, isTabVisible]);
 
-    // Efecto para manejar el polling
+    // Efecto para manejar el polling y visibilidad
     useEffect(() => {
         const handleVisibilityChange = () => {
-            if (document.visibilityState === 'visible') {
+            const isVisible = document.visibilityState === 'visible';
+            setIsTabVisible(isVisible);
+            
+            if (isVisible) {
                 // Si la pestaña se vuelve visible, actualizar inmediatamente
                 if (pollingRef.current) {
                     clearTimeout(pollingRef.current);
@@ -159,6 +179,15 @@ const ProductDetail = () => {
         setTimeout(() => setIsUserInteracting(false), 2000);
     };
 
+    // Forzar actualización manual
+    const handleRefreshRates = () => {
+        if (pollingRef.current) {
+            clearTimeout(pollingRef.current);
+        }
+        fetchRates();
+        message.info('Actualizando tasas de cambio...');
+    };
+
     const handleQuantityChange = (value) => {
         const newValue = Math.max(1, Math.min(10, value));
         setQuantity(newValue);
@@ -192,16 +221,16 @@ const ProductDetail = () => {
 
     // Opciones de moneda
     const currencyOptions = [
-        { value: 'USD', label: 'USD ($)' },
-        { value: 'EUR', label: 'EUR (€)' },
-        { value: 'GBP', label: 'GBP (£)' },
-        { value: 'JPY', label: 'JPY (¥)' },
-        { value: 'CAD', label: 'CAD ($)' },
-        { value: 'AUD', label: 'AUD ($)' },
-        { value: 'MXN', label: 'MXN ($)', disabled: true },
+        { value: 'USD', label: 'Dólar Estadounidense (USD)' },
+        { value: 'EUR', label: 'Euro (EUR)' },
+        { value: 'GBP', label: 'Libra Esterlina (GBP)' },
+        { value: 'JPY', label: 'Yen Japonés (JPY)' },
+        { value: 'CAD', label: 'Dólar Canadiense (CAD)' },
+        { value: 'AUD', label: 'Dólar Australiano (AUD)' },
+        { value: 'MXN', label: 'Peso Mexicano (MXN)', disabled: true },
     ];
 
-    // Mostrar monedas populares
+    // Monedas populares para mostrar directamente
     const popularCurrencies = ['USD', 'EUR', 'GBP'];
     const showPopularCurrencies = exchangeRates && !currencyError;
 
@@ -271,7 +300,7 @@ const ProductDetail = () => {
                             </div>
                         </Col>
                         <Col xs={24} md={12}>
-                            <div style={{ marginBottom: "16px" }}>
+                            <div style={{ marginBottom: "16px", display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                                 <Tag color="blue" style={{ fontSize: "14px", padding: "4px 8px" }}>
                                     {instrumento.marca}
                                 </Tag>
@@ -279,9 +308,19 @@ const ProductDetail = () => {
                                     {instrumento.subcategoria}
                                 </Tag>
                                 {lastUpdate && (
-                                    <Tag color="geekblue" style={{ marginLeft: '8px' }}>
-                                        Actualizado: {lastUpdate.toLocaleTimeString()}
-                                    </Tag>
+                                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                                        <Tag color="geekblue">
+                                            Actualizado: {lastUpdate.toLocaleTimeString()}
+                                        </Tag>
+                                        <Tooltip title="Actualizar tasas ahora">
+                                            <Button 
+                                                type="text" 
+                                                icon={<InfoCircleOutlined />} 
+                                                onClick={handleRefreshRates}
+                                                style={{ marginLeft: '4px' }}
+                                            />
+                                        </Tooltip>
+                                    </div>
                                 )}
                             </div>
                             
@@ -315,6 +354,7 @@ const ProductDetail = () => {
                                     </Tag>
                                 )}
                                 
+                                {/* Conversiones populares */}
                                 {showPopularCurrencies && (
                                     <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '12px' }}>
                                         {popularCurrencies.map(currency => (
@@ -322,7 +362,11 @@ const ProductDetail = () => {
                                                 key={currency} 
                                                 color={selectedCurrency === currency ? 'blue' : 'default'}
                                                 onClick={() => handleCurrencyChange(currency)}
-                                                style={{ cursor: 'pointer', padding: '4px 8px' }}
+                                                style={{ 
+                                                    cursor: 'pointer', 
+                                                    padding: '4px 8px',
+                                                    transition: 'all 0.3s'
+                                                }}
                                             >
                                                 {currency}: {(instrumento.precio * exchangeRates[currency]).toFixed(2)}
                                             </Tag>
@@ -330,6 +374,7 @@ const ProductDetail = () => {
                                     </div>
                                 )}
                                 
+                                {/* Selector de moneda completo */}
                                 {isLoadingRates ? (
                                     <Skeleton.Input active size="small" style={{ width: 200 }} />
                                 ) : exchangeRates ? (
@@ -339,10 +384,13 @@ const ProductDetail = () => {
                                             value={selectedCurrency}
                                             onChange={handleCurrencyChange}
                                             options={currencyOptions}
-                                            style={{ width: '120px' }}
+                                            style={{ width: '180px' }}
                                             disabled={!!currencyError}
                                             onFocus={() => setIsUserInteracting(true)}
                                             onBlur={() => setIsUserInteracting(false)}
+                                            showSearch
+                                            optionFilterProp="label"
+                                            placeholder="Selecciona divisa"
                                         />
                                         {convertedPrice && (
                                             <span style={{ 
@@ -354,12 +402,123 @@ const ProductDetail = () => {
                                             </span>
                                         )}
                                     </div>
-                                ) : null}
+                                ) : (
+                                    <Tag color="orange">Esperando tasas de cambio...</Tag>
+                                )}
                             </div>
                             
-                            {/* Resto del código de renderizado... */}
+                            <Paragraph style={{ 
+                                fontSize: "16px", 
+                                color: "#666",
+                                marginBottom: "24px",
+                                lineHeight: "1.6"
+                            }}>
+                                {instrumento.descripcion}
+                            </Paragraph>
+                            
+                            <div style={{ marginBottom: "24px" }}>
+                                <Paragraph strong style={{ display: "inline-block", marginRight: "8px" }}>
+                                    Disponibilidad:
+                                </Paragraph>
+                                <span style={{ 
+                                    color: instrumento.existencias > 0 ? "#52c41a" : "#f5222d",
+                                    fontWeight: "500"
+                                }}>
+                                    {instrumento.existencias > 0 ? 
+                                        `En stock (${instrumento.existencias} unidades)` : 
+                                        "Agotado"}
+                                </span>
+                            </div>
+                            
+                            <div style={{ display: "flex", alignItems: "center", marginBottom: "24px" }}>
+                                <Paragraph strong style={{ marginRight: "16px", marginBottom: 0 }}>
+                                    Cantidad:
+                                </Paragraph>
+                                <InputNumber
+                                    min={1}
+                                    max={Math.min(10, instrumento.existencias)}
+                                    value={quantity}
+                                    onChange={handleQuantityChange}
+                                    style={{ width: "100px", marginRight: "16px" }}
+                                    disabled={instrumento.existencias <= 0}
+                                />
+                                <Button
+                                    type="primary"
+                                    size="large"
+                                    style={{ 
+                                        backgroundColor: "#ff3b3b", 
+                                        borderColor: "#ff3b3b",
+                                        height: "40px",
+                                        padding: "0 24px"
+                                    }}
+                                    onClick={handleBuyClick}
+                                    disabled={instrumento.existencias <= 0}
+                                >
+                                    {instrumento.existencias > 0 ? "Agregar al carrito" : "No disponible"}
+                                </Button>
+                            </div>
+                            
+                            <div style={{ display: "flex", gap: "16px" }}>
+                                <Button 
+                                    type="default" 
+                                    size="large"
+                                    style={{ height: "40px" }}
+                                    onClick={() => navigate(-1)}
+                                >
+                                    Seguir comprando
+                                </Button>
+                                <Button 
+                                    type="default" 
+                                    size="large"
+                                    style={{ height: "40px" }}
+                                    onClick={() => navigate("/car")}
+                                >
+                                    Ver carrito
+                                </Button>
+                            </div>
                         </Col>
                     </Row>
+                </Card>
+                
+                {/* Especificaciones y detalles adicionales */}
+                <Card
+                    style={{
+                        borderRadius: "12px",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
+                    }}
+                >
+                    <Title level={3} style={{ marginBottom: "16px" }}>
+                        Especificaciones Técnicas
+                    </Title>
+                    <Divider style={{ margin: "16px 0" }} />
+                    
+                    <Row gutter={[24, 16]}>
+                        <Col xs={24} md={12}>
+                            <Paragraph strong>Marca:</Paragraph>
+                            <Paragraph>{instrumento.marca}</Paragraph>
+                        </Col>
+                        <Col xs={24} md={12}>
+                            <Paragraph strong>Modelo:</Paragraph>
+                            <Paragraph>{instrumento.nombre}</Paragraph>
+                        </Col>
+                        <Col xs={24} md={12}>
+                            <Paragraph strong>Categoría:</Paragraph>
+                            <Paragraph>{instrumento.subcategoria}</Paragraph>
+                        </Col>
+                        <Col xs={24} md={12}>
+                            <Paragraph strong>SKU:</Paragraph>
+                            <Paragraph>MUS-{instrumento.id?.toString().padStart(4, '0')}</Paragraph>
+                        </Col>
+                    </Row>
+                    
+                    <Divider style={{ margin: "24px 0" }} />
+                    
+                    <Title level={4} style={{ marginBottom: "16px" }}>
+                        Descripción Detallada
+                    </Title>
+                    <Paragraph style={{ color: "#666", lineHeight: "1.6" }}>
+                        {instrumento.descripcion || "Este instrumento musical ofrece un sonido excepcional y una construcción de alta calidad. Diseñado para músicos profesionales y entusiastas que buscan lo mejor en su categoría."}
+                    </Paragraph>
                 </Card>
             </Content>
         </Layout>
