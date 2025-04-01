@@ -40,7 +40,7 @@ const Home = () => {
                         bordered={false}
                         cover={
                             <img 
-                                src="/assets/banner1.jpg" 
+                                src="/banner1.jpg" 
                                 style={{ 
                                     height: "400px", 
                                     objectFit: "cover",
@@ -165,7 +165,7 @@ const Home = () => {
                                 hoverable
                                 cover={
                                     <img
-                                        src="/assets/piano.jpg"
+                                        src="/piano.jpg"
                                         style={{ 
                                             height: "280px", 
                                             objectFit: "cover",
@@ -217,7 +217,7 @@ const Home = () => {
                                 hoverable
                                 cover={
                                     <img
-                                        src="/assets/novedades.jpg"
+                                        src="/novedades.jpg"
                                         style={{ 
                                             height: "280px", 
                                             objectFit: "cover",
