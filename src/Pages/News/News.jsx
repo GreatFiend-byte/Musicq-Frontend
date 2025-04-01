@@ -13,21 +13,21 @@ const News = () => {
             title: "Nueva Línea de Guitarras Eléctricas",
             description:
                 "Descubre nuestra nueva colección de guitarras eléctricas, diseñadas para músicos profesionales y principiantes.",
-            image: "/src/assets/guitarra-electrica.jpg",
+            image: "/guitarra-electrica.jpg",
             date: "20 de Octubre, 2023",
         },
         {
             title: "Taller de Mantenimiento de Instrumentos",
             description:
                 "Aprende a mantener y cuidar tus instrumentos musicales en nuestro taller gratuito este sábado.",
-            image: "/src/assets/Violin-1.jpg",
+            image: "/Violin-1.jpg",
             date: "15 de Octubre, 2023",
         },
         {
             title: "Ofertas Especiales en Baterías",
             description:
                 "Aprovecha nuestras increíbles ofertas en baterías acústicas y electrónicas. ¡Solo por tiempo limitado!",
-            image: "/src/assets/bateria10.jpg",
+            image: "/bateria10.jpg",
             date: "10 de Octubre, 2023",
         },
     ];
