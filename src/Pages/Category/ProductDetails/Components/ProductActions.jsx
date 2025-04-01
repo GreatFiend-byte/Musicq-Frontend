@@ -3,7 +3,7 @@ import Button from '../../../../ComponentsUI/Button';
 import Typography, { Paragraph } from '../../../../ComponentsUI/Typography.jsx';
 import { useNavigate } from 'react-router-dom';
 
-const ProductActions = ({ instrumento, quantity, onQuantityChange, navigate }) => {
+const ProductActions = ({ instrumento,  cId, iId, quantity, onQuantityChange, navigate }) => {
   const handleBuyClick = () => {
     if (!instrumento) return;
     
@@ -20,6 +20,8 @@ const ProductActions = ({ instrumento, quantity, onQuantityChange, navigate }) =
     navigate("/car", {
       state: {
         product: instrumento,
+        categoryId: cId,
+        instrumentId: iId,
         quantity,
       },
     });
