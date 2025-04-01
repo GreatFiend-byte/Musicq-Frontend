@@ -110,7 +110,8 @@ const LoginForm = () => {
     setGoogleLoading(true);
     try {
       const { url } = await loginWithGoogle();
-      window.location.href = url;
+      navigate(url);
+      //window.location.href = url;
     } catch (error) {
       message.error(error.message || 'Error al iniciar sesión con Google');
       setGoogleLoading(false);
