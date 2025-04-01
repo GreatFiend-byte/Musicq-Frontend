@@ -91,6 +91,8 @@ const ProductDetailsPage = () => {
                             <ProductInfo instrumento={instrumento} />
                             <ProductActions 
                                 instrumento={instrumento} 
+                                categoryId={categoryId}
+                                instrumentId={instrumentId}
                                 quantity={quantity} 
                                 onQuantityChange={handleQuantityChange}
                                 navigate={navigate}
