@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/login/success",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
