@@ -10,7 +10,7 @@ import Register from './Pages/Register/Register.jsx';
 import Category from './Pages/Category/Category.jsx';
 import Users from './Pages/Admin/User/Users.jsx';
 import Instruments from './Pages/Admin/Instruments/Instruments.jsx';
-import ProductDetails from './Pages/Category/ProductDetails/ProductDetails.jsx';
+import ProductDetails from './Pages/Category/ProductDetails.jsx';
 import Car from './Pages/Car/Car.jsx';
 import ProductBrand from './Pages/ProductBrand/ProductBrand.jsx';
 import ContactUs from './Pages/Contact/Contact.jsx';
