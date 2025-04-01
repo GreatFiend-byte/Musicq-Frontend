@@ -97,7 +97,6 @@ const UserForm = ({ form, initialValues }) => (
         >
           <Select size="large" placeholder="Seleccione un rol">
             <Option value="admin">Administrador</Option>
-            <Option value="vendedor">Vendedor</Option>
             <Option value="user">Usuario</Option>
           </Select>
         </Form.Item>
