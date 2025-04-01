@@ -13,19 +13,19 @@ const AboutUs = () => {
         {
             name: "Marco Polo Cruz Ceron",
             role: "Fundador y Luthier",
-            avatar: "/src/assets/avatar1.png",
+            avatar: "/avatar1.png",
             description: "Especialista en la fabricación y reparación de instrumentos de cuerda.",
         },
         {
             name: "Ana López",
             role: "Especialista en Ventas",
-            avatar: "/src/assets/avatar3.png",
+            avatar: "/avatar3.png",
             description: "Apasionada por ayudar a los músicos a encontrar el instrumento perfecto.",
         },
         {
             name: "Miguel Torres",
             role: "Instructor de Música",
-            avatar: "/src/assets/avatar2.png",
+            avatar: "/avatar2.png",
             description: "Experto en educación musical y técnicas avanzadas de interpretación.",
         },
     ];
